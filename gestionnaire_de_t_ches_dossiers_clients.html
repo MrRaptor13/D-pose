@@ -1,0 +1,1657 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestionnaire de Tâches — Dossiers Clients</title>
+    <style>
+        /* =====================================================================
+           STYLES NATIFS ÉPURÉS & RESPONSIVES (SANS FRAMEWORK EXTERNE)
+           ===================================================================== */
+        :root {
+            --bg-page: #f8fafc;
+            --bg-card: #ffffff;
+            --bg-subtle: #f1f5f9;
+            --border: #e2e8f0;
+            --border-strong: #cbd5e1;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --primary: #2563eb;
+            --primary-hover: #1d4ed8;
+            --primary-soft: #eff6ff;
+            --danger: #dc2626;
+            --danger-soft: #fef2f2;
+            --success: #16a34a;
+            --success-soft: #f0fdf4;
+            --warning: #d97706;
+            --warning-soft: #fffbeb;
+            --radius: 10px;
+            --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.05);
+            --shadow-md: 0 10px 25px -5px rgba(15, 23, 42, 0.12);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-page);
+            color: var(--text-main);
+            line-height: 1.45;
+            font-size: 14px;
+            min-height: 100vh;
+            padding: 16px;
+        }
+
+        .container {
+            max-width: 960px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        /* En-tête minimaliste & Barre dossier */
+        .header-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 16px;
+            box-shadow: var(--shadow-sm);
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .header-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .app-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--text-main);
+            letter-spacing: -0.01em;
+        }
+
+        .storage-badge {
+            font-size: 11px;
+            color: var(--text-muted);
+            background: var(--bg-subtle);
+            padding: 3px 8px;
+            border-radius: 999px;
+            border: 1px solid var(--border);
+        }
+
+        .dossier-bar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .dossier-select-group {
+            display: flex;
+            flex: 1;
+            min-width: 240px;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .search-input {
+            width: 190px;
+            max-width: 100%;
+        }
+
+        select.dossier-select {
+            flex: 1;
+            min-width: 200px;
+            font-weight: 600;
+        }
+
+        /* Éléments de formulaire & Boutons */
+        input[type="text"],
+        input[type="date"],
+        select,
+        textarea {
+            font-family: inherit;
+            font-size: 13px;
+            color: var(--text-main);
+            background: var(--bg-card);
+            border: 1px solid var(--border-strong);
+            border-radius: 8px;
+            padding: 7px 10px;
+            outline: none;
+            transition: border-color 0.15s, box-shadow 0.15s;
+        }
+
+        input:focus,
+        select:focus,
+        textarea:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+        }
+
+        button {
+            font-family: inherit;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            border-radius: 8px;
+            padding: 7px 12px;
+            border: 1px solid var(--border-strong);
+            background: var(--bg-card);
+            color: var(--text-main);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+            transition: background-color 0.15s, border-color 0.15s, opacity 0.15s;
+            white-space: nowrap;
+        }
+
+        button:hover:not(:disabled) {
+            background: var(--bg-subtle);
+        }
+
+        button:disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: #ffffff;
+            border-color: var(--primary);
+            font-weight: 600;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            background: var(--primary-hover);
+            border-color: var(--primary-hover);
+        }
+
+        .btn-soft-primary {
+            background: var(--primary-soft);
+            color: var(--primary);
+            border-color: #bfdbfe;
+        }
+
+        .btn-soft-primary:hover:not(:disabled) {
+            background: #dbeafe;
+        }
+
+        .btn-danger {
+            color: var(--danger);
+            border-color: #fecaca;
+            background: var(--bg-card);
+        }
+
+        .btn-danger:hover:not(:disabled) {
+            background: var(--danger-soft);
+        }
+
+        .btn-xs {
+            font-size: 12px;
+            padding: 4px 8px;
+            border-radius: 6px;
+        }
+
+        /* Barre d'actions, compteurs & filtres */
+        .toolbar {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+        }
+
+        .counters {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .counter-pill {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 6px 10px;
+            font-size: 12px;
+            color: var(--text-muted);
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .counter-pill strong {
+            color: var(--text-main);
+            font-size: 13px;
+        }
+
+        .counter-pill.overdue strong {
+            color: var(--danger);
+        }
+
+        .filters-bar {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 10px 12px;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+        }
+
+        .filters-group {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .checkbox-label {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            color: var(--text-main);
+            background: var(--bg-subtle);
+            padding: 6px 10px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            cursor: pointer;
+            user-select: none;
+        }
+
+        /* Liste des tâches & Hiérarchie */
+        .tasks-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            padding-bottom: 32px;
+        }
+
+        .empty-state {
+            background: var(--bg-card);
+            border: 1px dashed var(--border-strong);
+            border-radius: var(--radius);
+            padding: 36px 20px;
+            text-align: center;
+            color: var(--text-muted);
+        }
+
+        .empty-state p {
+            margin-top: 6px;
+            font-size: 13px;
+        }
+
+        .task-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 12px 14px;
+            box-shadow: var(--shadow-sm);
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .task-card.is-overdue {
+            border-color: #fca5a5;
+            background: #fffafa;
+        }
+
+        .task-row {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .task-left {
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            flex: 1;
+            min-width: 240px;
+        }
+
+        .collapse-btn {
+            width: 24px;
+            height: 24px;
+            padding: 0;
+            border: 1px solid transparent;
+            background: transparent;
+            color: var(--text-muted);
+            font-size: 11px;
+            flex-shrink: 0;
+        }
+
+        .collapse-btn:hover {
+            background: var(--bg-subtle);
+            color: var(--text-main);
+        }
+
+        .task-content {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            flex: 1;
+            min-width: 0;
+        }
+
+        .task-title-line {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .task-title {
+            font-weight: 600;
+            font-size: 14px;
+            color: var(--text-main);
+            word-break: break-word;
+        }
+
+        .task-title.done {
+            text-decoration: line-through;
+            color: var(--text-muted);
+        }
+
+        .task-desc {
+            font-size: 12.5px;
+            color: var(--text-muted);
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        .task-meta {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 6px;
+            margin-top: 2px;
+        }
+
+        .badge {
+            font-size: 11px;
+            padding: 2px 7px;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            background: var(--bg-subtle);
+            color: var(--text-muted);
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .badge-prio-Urgent { background: var(--danger-soft); color: var(--danger); border-color: #fecaca; font-weight: 600; }
+        .badge-prio-Élevé { background: var(--warning-soft); color: var(--warning); border-color: #fde68a; font-weight: 600; }
+        .badge-prio-Normal { background: var(--primary-soft); color: var(--primary); border-color: #bfdbfe; }
+        .badge-prio-Faible { background: var(--bg-subtle); color: var(--text-muted); border-color: var(--border); }
+
+        .badge-overdue {
+            background: var(--danger-soft);
+            color: var(--danger);
+            border-color: #fecaca;
+            font-weight: 600;
+        }
+
+        .badge-progress {
+            background: var(--success-soft);
+            color: var(--success);
+            border-color: #bbf7d0;
+            font-weight: 600;
+        }
+
+        .task-right {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-shrink: 0;
+        }
+
+        /* Couleurs des sélecteurs de statut */
+        select.status-select {
+            font-size: 12px;
+            font-weight: 600;
+            padding: 5px 8px;
+        }
+        select.status-À-faire { background: var(--bg-subtle); color: #334155; }
+        select.status-En-cours { background: var(--primary-soft); color: var(--primary); border-color: #bfdbfe; }
+        select.status-En-attente { background: var(--warning-soft); color: var(--warning); border-color: #fde68a; }
+        select.status-Terminé { background: var(--success-soft); color: var(--success); border-color: #bbf7d0; }
+
+        /* Arborescence des sous-tâches */
+        .subtasks-tree {
+            margin-left: 20px;
+            padding-left: 12px;
+            border-left: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .subtask-item {
+            background: #f8fafc;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 8px 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .subtask-item.is-overdue {
+            border-color: #fca5a5;
+            background: #fffafa;
+        }
+
+        .subtask-row {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .tree-branch {
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+            color: var(--text-muted);
+            font-size: 12px;
+            user-select: none;
+            padding-top: 2px;
+        }
+
+        /* Liste des pièces jointes */
+        .attachments-box {
+            background: #f8fafc;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 8px 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            margin-top: 4px;
+        }
+
+        .attachment-item {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 5px 8px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            flex-wrap: wrap;
+            font-size: 12px;
+        }
+
+        .attachment-info {
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+            flex: 1;
+        }
+
+        .attachment-name {
+            font-weight: 600;
+            color: var(--text-main);
+            word-break: break-all;
+        }
+
+        .attachment-date {
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        .attachment-actions {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        /* Modales natives */
+        .modal-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.45);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+            z-index: 100;
+        }
+
+        .modal-backdrop.open {
+            display: flex;
+        }
+
+        .modal-dialog {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            box-shadow: var(--shadow-md);
+            width: 100%;
+            max-width: 480px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .modal-header {
+            padding: 14px 16px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .modal-header h2 {
+            font-size: 15px;
+            font-weight: 700;
+        }
+
+        .modal-body {
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .form-field {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .form-field label {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-main);
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+            gap: 10px;
+        }
+
+        .modal-footer {
+            padding: 12px 16px;
+            border-top: 1px solid var(--border);
+            background: var(--bg-subtle);
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+        }
+
+        /* Notification Toast */
+        .toast {
+            position: fixed;
+            bottom: 16px;
+            right: 16px;
+            background: #0f172a;
+            color: #ffffff;
+            padding: 10px 14px;
+            border-radius: 8px;
+            font-size: 12.5px;
+            box-shadow: var(--shadow-md);
+            opacity: 0;
+            pointer-events: none;
+            transform: translateY(8px);
+            transition: opacity 0.2s, transform 0.2s;
+            z-index: 200;
+        }
+
+        .toast.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        @media (max-width: 640px) {
+            body { padding: 10px; }
+            .subtasks-tree { margin-left: 8px; padding-left: 8px; }
+            .search-input { width: 100%; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <!-- 1) EN-TÊTE MINIMALISTE & GESTION DES DOSSIERS -->
+    <header class="header-card">
+        <div class="header-top">
+            <h1 class="app-title">Gestionnaire de Tâches — Dossiers Clients</h1>
+            <span class="storage-badge">Sauvegarde locale hors ligne</span>
+        </div>
+
+        <div class="dossier-bar">
+            <div class="dossier-select-group">
+                <input type="text" id="dossier-search" class="search-input" placeholder="Rechercher un dossier..." aria-label="Rechercher un dossier par nom ou numéro">
+                <select id="dossier-select" class="dossier-select" aria-label="Sélectionner un dossier client">
+                    <option value="">Aucun dossier</option>
+                </select>
+            </div>
+            <button type="button" id="btn-add-dossier" class="btn-soft-primary">+ Nouveau dossier</button>
+            <button type="button" id="btn-edit-dossier" disabled>Modifier</button>
+            <button type="button" id="btn-delete-dossier" class="btn-danger" disabled>Supprimer</button>
+        </div>
+    </header>
+
+    <!-- 2) COMPTEURS & BOUTON NOUVELLE TÂCHE -->
+    <div class="toolbar">
+        <div class="counters">
+            <div class="counter-pill">À faire : <strong id="count-todo">0</strong></div>
+            <div class="counter-pill">Terminées : <strong id="count-done">0</strong></div>
+            <div class="counter-pill overdue">En retard : <strong id="count-overdue">0</strong></div>
+        </div>
+        <button type="button" id="btn-new-task" class="btn-primary" disabled>+ Nouvelle tâche</button>
+    </div>
+
+    <!-- FILTRES ET TRIS SIMPLES -->
+    <div class="filters-bar">
+        <div class="filters-group">
+            <select id="filter-status" aria-label="Filtrer par statut">
+                <option value="ALL">Tous les statuts</option>
+                <option value="ACTIVE">Non terminées</option>
+                <option value="À faire">À faire</option>
+                <option value="En cours">En cours</option>
+                <option value="En attente">En attente</option>
+                <option value="Terminé">Terminé</option>
+            </select>
+
+            <select id="filter-priority" aria-label="Filtrer par priorité">
+                <option value="ALL">Toutes priorités</option>
+                <option value="Urgent">Urgent</option>
+                <option value="Élevé">Élevé</option>
+                <option value="Normal">Normal</option>
+                <option value="Faible">Faible</option>
+            </select>
+
+            <label class="checkbox-label">
+                <input type="checkbox" id="filter-overdue">
+                <span>En retard uniquement</span>
+            </label>
+        </div>
+
+        <div class="filters-group">
+            <select id="sort-tasks" aria-label="Trier les tâches">
+                <option value="dueDateAsc">Trier : Échéance (proche)</option>
+                <option value="createdDesc">Trier : Création (récente)</option>
+                <option value="priorityDesc">Trier : Priorité</option>
+                <option value="statusAsc">Trier : Statut</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- 3) LISTE HIÉRARCHIQUE DES TÂCHES DU DOSSIER SÉLECTIONNÉ -->
+    <main id="tasks-container" class="tasks-list"></main>
+</div>
+
+<!-- INPUT FICHIER CACHÉ POUR L'AJOUT IMMÉDIAT DE PIÈCES JOINTES -->
+<input type="file" id="direct-file-input" multiple hidden>
+
+<!-- MODALE DOSSIER (AJOUTER / MODIFIER) -->
+<div id="modal-dossier" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="modal-dossier-title">
+    <div class="modal-dialog">
+        <div class="modal-header">
+            <h2 id="modal-dossier-title">Nouveau dossier</h2>
+            <button type="button" class="btn-xs" data-close-modal="modal-dossier">✕</button>
+        </div>
+        <form id="form-dossier">
+            <div class="modal-body">
+                <input type="hidden" id="dossier-id">
+                <div class="form-field">
+                    <label for="dossier-number">Numéro du dossier *</label>
+                    <input type="text" id="dossier-number" required placeholder="Ex : 2026-001">
+                </div>
+                <div class="form-field">
+                    <label for="dossier-name">Nom du dossier / client *</label>
+                    <input type="text" id="dossier-name" required placeholder="Ex : Client Dupont">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" data-close-modal="modal-dossier">Annuler</button>
+                <button type="submit" class="btn-primary">Enregistrer</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- MODALE TÂCHE / SOUS-TÂCHE (CRÉER / MODIFIER) -->
+<div id="modal-task" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="modal-task-title">
+    <div class="modal-dialog">
+        <div class="modal-header">
+            <h2 id="modal-task-title">Nouvelle tâche</h2>
+            <button type="button" class="btn-xs" data-close-modal="modal-task">✕</button>
+        </div>
+        <form id="form-task">
+            <div class="modal-body">
+                <input type="hidden" id="task-id">
+                <input type="hidden" id="task-parent-id">
+                <div class="form-field">
+                    <label for="task-title">Intitulé *</label>
+                    <input type="text" id="task-title" required placeholder="Intitulé de la tâche ou sous-tâche">
+                </div>
+                <div class="form-row">
+                    <div class="form-field">
+                        <label for="task-status">Statut</label>
+                        <select id="task-status">
+                            <option value="À faire">À faire</option>
+                            <option value="En cours">En cours</option>
+                            <option value="En attente">En attente</option>
+                            <option value="Terminé">Terminé</option>
+                        </select>
+                    </div>
+                    <div class="form-field">
+                        <label for="task-priority">Priorité</label>
+                        <select id="task-priority">
+                            <option value="Faible">Faible</option>
+                            <option value="Normal" selected>Normal</option>
+                            <option value="Élevé">Élevé</option>
+                            <option value="Urgent">Urgent</option>
+                        </select>
+                    </div>
+                    <div class="form-field">
+                        <label for="task-due-date">Échéance</label>
+                        <input type="date" id="task-due-date">
+                    </div>
+                </div>
+                <div class="form-field">
+                    <label for="task-description">Description / Commentaire</label>
+                    <textarea id="task-description" rows="3" placeholder="Notes, précisions ou suivi..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" data-close-modal="modal-task">Annuler</button>
+                <button type="submit" class="btn-primary">Enregistrer</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- MODALE DE CONFIRMATION DE SUPPRESSION -->
+<div id="modal-confirm" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="confirm-title">
+    <div class="modal-dialog" style="max-width: 400px;">
+        <div class="modal-header">
+            <h2 id="confirm-title">Confirmer la suppression</h2>
+            <button type="button" class="btn-xs" id="confirm-close">✕</button>
+        </div>
+        <div class="modal-body">
+            <p id="confirm-message" style="font-size: 13px; color: var(--text-muted);"></p>
+        </div>
+        <div class="modal-footer">
+            <button type="button" id="confirm-cancel">Annuler</button>
+            <button type="button" id="confirm-ok" class="btn-danger" style="background: var(--danger); color: #fff; border-color: var(--danger);">Supprimer</button>
+        </div>
+    </div>
+</div>
+
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+<script>
+(function () {
+    "use strict";
+
+    /* =========================================================================
+       1. STOCKAGE PERSISTANT NATIF (localStorage + IndexedDB pour les fichiers)
+       ========================================================================= */
+    const STORAGE_KEY = "todo_dossiers_clients_v1";
+    const IDB_NAME = "todo_dossiers_files_db";
+    const IDB_STORE = "attachments";
+
+    let dbInstance = null;
+
+    function openFilesDB() {
+        return new Promise((resolve, reject) => {
+            if (dbInstance) return resolve(dbInstance);
+            const req = indexedDB.open(IDB_NAME, 1);
+            req.onupgradeneeded = (e) => {
+                const db = e.target.result;
+                if (!db.objectStoreNames.contains(IDB_STORE)) {
+                    const store = db.createObjectStore(IDB_STORE, { keyPath: "id" });
+                    store.createIndex("targetId", "targetId", { unique: false });
+                }
+            };
+            req.onsuccess = (e) => {
+                dbInstance = e.target.result;
+                resolve(dbInstance);
+            };
+            req.onerror = () => reject(req.error);
+        });
+    }
+
+    async function idbSaveAttachment(record) {
+        const db = await openFilesDB();
+        return new Promise((resolve, reject) => {
+            const tx = db.transaction(IDB_STORE, "readwrite");
+            tx.objectStore(IDB_STORE).put(record);
+            tx.oncomplete = () => resolve();
+            tx.onerror = () => reject(tx.error);
+        });
+    }
+
+    async function idbGetAllAttachmentsMeta() {
+        const db = await openFilesDB();
+        return new Promise((resolve, reject) => {
+            const tx = db.transaction(IDB_STORE, "readonly");
+            const req = tx.objectStore(IDB_STORE).getAll();
+            req.onsuccess = () => {
+                // On conserve les métadonnées en mémoire, les Blobs restent dans IndexedDB jusqu'au téléchargement
+                const items = (req.result || []).map(item => ({
+                    id: item.id,
+                    targetId: item.targetId,
+                    name: item.name,
+                    type: item.type,
+                    size: item.size,
+                    addedAt: item.addedAt
+                }));
+                resolve(items);
+            };
+            req.onerror = () => reject(req.error);
+        });
+    }
+
+    async function idbGetAttachmentBlob(id) {
+        const db = await openFilesDB();
+        return new Promise((resolve, reject) => {
+            const tx = db.transaction(IDB_STORE, "readonly");
+            const req = tx.objectStore(IDB_STORE).get(id);
+            req.onsuccess = () => resolve(req.result || null);
+            req.onerror = () => reject(req.error);
+        });
+    }
+
+    async function idbDeleteAttachment(id) {
+        const db = await openFilesDB();
+        return new Promise((resolve, reject) => {
+            const tx = db.transaction(IDB_STORE, "readwrite");
+            tx.objectStore(IDB_STORE).delete(id);
+            tx.oncomplete = () => resolve();
+            tx.onerror = () => reject(tx.error);
+        });
+    }
+
+    /* =========================================================================
+       2. ÉTAT DE L'APPLICATION (100% VIERGE AU PREMIER LANCEMENT)
+       ========================================================================= */
+    const state = {
+        dossiers: [],
+        tasks: [], // Tâches principales (parentId: null) et sous-tâches (parentId: string)
+        attachmentsMeta: [], // Métadonnées des fichiers stockés dans IndexedDB
+        selectedDossierId: "",
+        dossierSearch: "",
+        filterStatus: "ALL",
+        filterPriority: "ALL",
+        filterOverdueOnly: false,
+        sortBy: "dueDateAsc",
+        collapsedTasks: new Set(),
+        openAttachments: new Set(),
+        pendingUploadTargetId: null
+    };
+
+    function loadStateFromLocalStorage() {
+        try {
+            const raw = localStorage.getItem(STORAGE_KEY);
+            if (!raw) return;
+            const parsed = JSON.parse(raw);
+            if (Array.isArray(parsed.dossiers)) state.dossiers = parsed.dossiers;
+            if (Array.isArray(parsed.tasks)) state.tasks = parsed.tasks;
+            if (typeof parsed.selectedDossierId === "string") {
+                state.selectedDossierId = parsed.selectedDossierId;
+            }
+        } catch (err) {
+            console.error("Erreur de lecture localStorage :", err);
+        }
+    }
+
+    function saveStateToLocalStorage() {
+        try {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify({
+                dossiers: state.dossiers,
+                tasks: state.tasks,
+                selectedDossierId: state.selectedDossierId
+            }));
+        } catch (err) {
+            showToast("Erreur lors de la sauvegarde locale.");
+        }
+    }
+
+    /* =========================================================================
+       3. UTILITAIRES GÉNÉRAUX
+       ========================================================================= */
+    function generateId() {
+        return Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 8);
+    }
+
+    function escapeHtml(str) {
+        if (!str) return "";
+        return String(str)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;");
+    }
+
+    function getTodayISO() {
+        const d = new Date();
+        const offset = d.getTimezoneOffset();
+        return new Date(d.getTime() - offset * 60000).toISOString().split("T")[0];
+    }
+
+    function isOverdue(item) {
+        if (!item.dueDate || item.status === "Terminé") return false;
+        return item.dueDate < getTodayISO();
+    }
+
+    function formatDate(iso) {
+        if (!iso) return "";
+        const parts = iso.split("T")[0].split("-");
+        if (parts.length === 3) return `${parts[2]}/${parts[1]}/${parts[0]}`;
+        return iso;
+    }
+
+    function formatDateTime(iso) {
+        if (!iso) return "";
+        const d = new Date(iso);
+        if (isNaN(d.getTime())) return iso;
+        return d.toLocaleDateString("fr-FR") + " à " + d.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
+    }
+
+    function formatSize(bytes) {
+        if (!bytes) return "";
+        if (bytes < 1024) return bytes + " o";
+        if (bytes < 1024 * 1024) return Math.round(bytes / 1024) + " Ko";
+        return (bytes / (1024 * 1024)).toFixed(1) + " Mo";
+    }
+
+    let toastTimer = null;
+    function showToast(msg) {
+        const el = document.getElementById("toast");
+        el.textContent = msg;
+        el.classList.add("show");
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => el.classList.remove("show"), 2800);
+    }
+
+    function openModal(id) {
+        document.getElementById(id).classList.add("open");
+    }
+
+    function closeModal(id) {
+        document.getElementById(id).classList.remove("open");
+    }
+
+    document.querySelectorAll("[data-close-modal]").forEach(btn => {
+        btn.addEventListener("click", () => closeModal(btn.getAttribute("data-close-modal")));
+    });
+
+    function askConfirm(message) {
+        return new Promise((resolve) => {
+            document.getElementById("confirm-message").textContent = message;
+            openModal("modal-confirm");
+
+            const okBtn = document.getElementById("confirm-ok");
+            const cancelBtn = document.getElementById("confirm-cancel");
+            const closeBtn = document.getElementById("confirm-close");
+
+            function cleanup(result) {
+                closeModal("modal-confirm");
+                okBtn.removeEventListener("click", onOk);
+                cancelBtn.removeEventListener("click", onCancel);
+                closeBtn.removeEventListener("click", onCancel);
+                resolve(result);
+            }
+
+            function onOk() { cleanup(true); }
+            function onCancel() { cleanup(false); }
+
+            okBtn.addEventListener("click", onOk);
+            cancelBtn.addEventListener("click", onCancel);
+            closeBtn.addEventListener("click", onCancel);
+        });
+    }
+
+    /* =========================================================================
+       4. RENDU DU MENU DÉROULANT DES DOSSIERS
+       ========================================================================= */
+    function renderDossierSelect() {
+        const select = document.getElementById("dossier-select");
+        const btnEdit = document.getElementById("btn-edit-dossier");
+        const btnDelete = document.getElementById("btn-delete-dossier");
+        const btnNewTask = document.getElementById("btn-new-task");
+
+        const query = state.dossierSearch.trim().toLowerCase();
+        const filtered = state.dossiers.filter(d =>
+            d.number.toLowerCase().includes(query) ||
+            d.name.toLowerCase().includes(query)
+        );
+
+        // Vérifier que le dossier sélectionné existe toujours
+        if (state.selectedDossierId && !state.dossiers.some(d => d.id === state.selectedDossierId)) {
+            state.selectedDossierId = state.dossiers.length > 0 ? state.dossiers[0].id : "";
+        }
+
+        if (state.dossiers.length === 0) {
+            select.innerHTML = `<option value="">Aucun dossier</option>`;
+            state.selectedDossierId = "";
+        } else if (filtered.length === 0) {
+            select.innerHTML = `<option value="">Aucun dossier trouvé</option>`;
+        } else {
+            // Si le dossier actif n'est pas dans la recherche filtrée, on sélectionne le premier résultat
+            if (!filtered.some(d => d.id === state.selectedDossierId)) {
+                state.selectedDossierId = filtered[0].id;
+            }
+            select.innerHTML = filtered.map(d => {
+                const selectedAttr = d.id === state.selectedDossierId ? "selected" : "";
+                return `<option value="${escapeHtml(d.id)}" ${selectedAttr}>${escapeHtml(d.number)} — ${escapeHtml(d.name)}</option>`;
+            }).join("");
+        }
+
+        const hasActiveDossier = Boolean(state.selectedDossierId && state.dossiers.some(d => d.id === state.selectedDossierId));
+        btnEdit.disabled = !hasActiveDossier;
+        btnDelete.disabled = !hasActiveDossier;
+        btnNewTask.disabled = !hasActiveDossier;
+    }
+
+    /* =========================================================================
+       5. RENDU HIÉRARCHIQUE DES TÂCHES, SOUS-TÂCHES & PIÈCES JOINTES
+       ========================================================================= */
+    const PRIO_WEIGHT = { "Urgent": 4, "Élevé": 3, "Normal": 2, "Faible": 1 };
+    const STATUS_WEIGHT = { "À faire": 1, "En cours": 2, "En attente": 3, "Terminé": 4 };
+
+    function matchesFilters(item) {
+        if (state.filterStatus === "ACTIVE" && item.status === "Terminé") return false;
+        if (state.filterStatus !== "ALL" && state.filterStatus !== "ACTIVE" && item.status !== state.filterStatus) return false;
+        if (state.filterPriority !== "ALL" && item.priority !== state.filterPriority) return false;
+        if (state.filterOverdueOnly && !isOverdue(item)) return false;
+        return true;
+    }
+
+    function hasActiveFilters() {
+        return state.filterStatus !== "ALL" || state.filterPriority !== "ALL" || state.filterOverdueOnly;
+    }
+
+    function getAttachmentsFor(targetId) {
+        return state.attachmentsMeta.filter(a => a.targetId === targetId);
+    }
+
+    function renderAttachmentsHTML(targetId) {
+        const list = getAttachmentsFor(targetId);
+        if (list.length === 0 || !state.openAttachments.has(targetId)) return "";
+
+        return `
+            <div class="attachments-box">
+                ${list.map(att => `
+                    <div class="attachment-item">
+                        <div class="attachment-info">
+                            <span class="attachment-name">📎 ${escapeHtml(att.name)}</span>
+                            <span class="attachment-date">Déposé le ${formatDateTime(att.addedAt)}${att.size ? " · " + formatSize(att.size) : ""}</span>
+                        </div>
+                        <div class="attachment-actions">
+                            <button type="button" class="btn-xs btn-soft-primary" data-download-att="${escapeHtml(att.id)}">Télécharger</button>
+                            <button type="button" class="btn-xs btn-danger" data-delete-att="${escapeHtml(att.id)}">Supprimer</button>
+                        </div>
+                    </div>
+                `).join("")}
+            </div>
+        `;
+    }
+
+    function statusClass(status) {
+        return "status-" + status.replace(/\s+/g, "-");
+    }
+
+    function renderTasks() {
+        const container = document.getElementById("tasks-container");
+        const elTodo = document.getElementById("count-todo");
+        const elDone = document.getElementById("count-done");
+        const elOverdue = document.getElementById("count-overdue");
+
+        if (!state.selectedDossierId) {
+            elTodo.textContent = "0";
+            elDone.textContent = "0";
+            elOverdue.textContent = "0";
+            container.innerHTML = `
+                <div class="empty-state">
+                    <strong>Aucun dossier sélectionné</strong>
+                    <p>Cliquez sur « + Nouveau dossier » pour créer votre premier dossier client.</p>
+                </div>
+            `;
+            return;
+        }
+
+        const allDossierItems = state.tasks.filter(t => t.dossierId === state.selectedDossierId);
+
+        // Compteurs globaux du dossier (tâches principales + sous-tâches)
+        elTodo.textContent = String(allDossierItems.filter(t => t.status !== "Terminé").length);
+        elDone.textContent = String(allDossierItems.filter(t => t.status === "Terminé").length);
+        elOverdue.textContent = String(allDossierItems.filter(t => isOverdue(t)).length);
+
+        const mainTasks = allDossierItems.filter(t => !t.parentId);
+        const subtasksMap = new Map();
+        allDossierItems.filter(t => t.parentId).forEach(st => {
+            if (!subtasksMap.has(st.parentId)) subtasksMap.set(st.parentId, []);
+            subtasksMap.get(st.parentId).push(st);
+        });
+
+        subtasksMap.forEach(arr => arr.sort((a, b) => a.createdAt.localeCompare(b.createdAt)));
+
+        const filtering = hasActiveFilters();
+        const visibleMain = mainTasks.filter(main => {
+            if (!filtering) return true;
+            if (matchesFilters(main)) return true;
+            const subs = subtasksMap.get(main.id) || [];
+            return subs.some(s => matchesFilters(s));
+        });
+
+        // Tri des tâches principales
+        visibleMain.sort((a, b) => {
+            if (state.sortBy === "dueDateAsc") {
+                if (!a.dueDate && !b.dueDate) return b.createdAt.localeCompare(a.createdAt);
+                if (!a.dueDate) return 1;
+                if (!b.dueDate) return -1;
+                return a.dueDate.localeCompare(b.dueDate);
+            }
+            if (state.sortBy === "createdDesc") {
+                return b.createdAt.localeCompare(a.createdAt);
+            }
+            if (state.sortBy === "priorityDesc") {
+                return (PRIO_WEIGHT[b.priority] || 0) - (PRIO_WEIGHT[a.priority] || 0);
+            }
+            if (state.sortBy === "statusAsc") {
+                return (STATUS_WEIGHT[a.status] || 9) - (STATUS_WEIGHT[b.status] || 9);
+            }
+            return 0;
+        });
+
+        if (visibleMain.length === 0) {
+            container.innerHTML = `
+                <div class="empty-state">
+                    <strong>Aucune tâche dans ce dossier</strong>
+                    <p>Cliquez sur « + Nouvelle tâche » pour ajouter une tâche à ce dossier.</p>
+                </div>
+            `;
+            return;
+        }
+
+        container.innerHTML = visibleMain.map(task => {
+            const overdue = isOverdue(task);
+            const allSubs = subtasksMap.get(task.id) || [];
+            const totalSubs = allSubs.length;
+            const doneSubs = allSubs.filter(s => s.status === "Terminé").length;
+            const isCollapsed = state.collapsedTasks.has(task.id) && !filtering;
+            const taskAtts = getAttachmentsFor(task.id);
+
+            const visibleSubs = (filtering && !matchesFilters(task))
+                ? allSubs.filter(s => matchesFilters(s))
+                : allSubs;
+
+            return `
+                <article class="task-card ${overdue ? "is-overdue" : ""}">
+                    <div class="task-row">
+                        <div class="task-left">
+                            <button type="button" class="collapse-btn" data-toggle-collapse="${escapeHtml(task.id)}" title="${isCollapsed ? "Déplier" : "Réduire"}" ${totalSubs === 0 ? 'style="visibility:hidden;"' : ""}>
+                                ${isCollapsed ? "▶" : "▼"}
+                            </button>
+                            <div class="task-content">
+                                <div class="task-title-line">
+                                    <span class="task-title ${task.status === "Terminé" ? "done" : ""}">${escapeHtml(task.title)}</span>
+                                    ${totalSubs > 0 ? `<span class="badge badge-progress">${doneSubs} / ${totalSubs} sous-tâches terminées</span>` : ""}
+                                </div>
+                                ${task.description ? `<div class="task-desc">${escapeHtml(task.description)}</div>` : ""}
+                                <div class="task-meta">
+                                    <span class="badge badge-prio-${escapeHtml(task.priority)}">${escapeHtml(task.priority)}</span>
+                                    <span class="badge">Créée le ${formatDate(task.createdAt)}</span>
+                                    ${task.dueDate ? `<span class="badge ${overdue ? "badge-overdue" : ""}">${overdue ? "En retard · " : "Échéance : "}${formatDate(task.dueDate)}</span>` : ""}
+                                    <button type="button" class="btn-xs btn-soft-primary" data-upload-target="${escapeHtml(task.id)}">+ Ajouter une pièce</button>
+                                    ${taskAtts.length > 0 ? `<button type="button" class="btn-xs" data-toggle-att="${escapeHtml(task.id)}">📎 ${taskAtts.length} pièce${taskAtts.length > 1 ? "s" : ""}</button>` : ""}
+                                    <button type="button" class="btn-xs" data-add-subtask="${escapeHtml(task.id)}">+ Sous-tâche</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="task-right">
+                            <select class="status-select ${statusClass(task.status)}" data-quick-status="${escapeHtml(task.id)}" aria-label="Statut de la tâche">
+                                <option value="À faire" ${task.status === "À faire" ? "selected" : ""}>À faire</option>
+                                <option value="En cours" ${task.status === "En cours" ? "selected" : ""}>En cours</option>
+                                <option value="En attente" ${task.status === "En attente" ? "selected" : ""}>En attente</option>
+                                <option value="Terminé" ${task.status === "Terminé" ? "selected" : ""}>Terminé</option>
+                            </select>
+                            <button type="button" class="btn-xs" data-edit-task="${escapeHtml(task.id)}">Modifier</button>
+                            <button type="button" class="btn-xs btn-danger" data-delete-task="${escapeHtml(task.id)}">Supprimer</button>
+                        </div>
+                    </div>
+
+                    ${renderAttachmentsHTML(task.id)}
+
+                    ${(!isCollapsed && visibleSubs.length > 0) ? `
+                        <div class="subtasks-tree">
+                            ${visibleSubs.map((sub, idx) => {
+                                const isLast = idx === visibleSubs.length - 1;
+                                const subOverdue = isOverdue(sub);
+                                const subAtts = getAttachmentsFor(sub.id);
+                                return `
+                                    <div class="subtask-item ${subOverdue ? "is-overdue" : ""}">
+                                        <div class="subtask-row">
+                                            <div class="task-left">
+                                                <span class="tree-branch" aria-hidden="true">${isLast ? "└──" : "├──"}</span>
+                                                <div class="task-content">
+                                                    <div class="task-title-line">
+                                                        <span class="task-title ${sub.status === "Terminé" ? "done" : ""}" style="font-size:13px;">${escapeHtml(sub.title)}</span>
+                                                    </div>
+                                                    ${sub.description ? `<div class="task-desc">${escapeHtml(sub.description)}</div>` : ""}
+                                                    <div class="task-meta">
+                                                        <span class="badge badge-prio-${escapeHtml(sub.priority)}">${escapeHtml(sub.priority)}</span>
+                                                        <span class="badge">Créée le ${formatDate(sub.createdAt)}</span>
+                                                        ${sub.dueDate ? `<span class="badge ${subOverdue ? "badge-overdue" : ""}">${subOverdue ? "En retard · " : "Échéance : "}${formatDate(sub.dueDate)}</span>` : ""}
+                                                        <button type="button" class="btn-xs btn-soft-primary" data-upload-target="${escapeHtml(sub.id)}">+ Ajouter une pièce</button>
+                                                        ${subAtts.length > 0 ? `<button type="button" class="btn-xs" data-toggle-att="${escapeHtml(sub.id)}">📎 ${subAtts.length} pièce${subAtts.length > 1 ? "s" : ""}</button>` : ""}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="task-right">
+                                                <select class="status-select ${statusClass(sub.status)}" data-quick-status="${escapeHtml(sub.id)}" aria-label="Statut de la sous-tâche">
+                                                    <option value="À faire" ${sub.status === "À faire" ? "selected" : ""}>À faire</option>
+                                                    <option value="En cours" ${sub.status === "En cours" ? "selected" : ""}>En cours</option>
+                                                    <option value="En attente" ${sub.status === "En attente" ? "selected" : ""}>En attente</option>
+                                                    <option value="Terminé" ${sub.status === "Terminé" ? "selected" : ""}>Terminé</option>
+                                                </select>
+                                                <button type="button" class="btn-xs" data-edit-task="${escapeHtml(sub.id)}">Modifier</button>
+                                                <button type="button" class="btn-xs btn-danger" data-delete-task="${escapeHtml(sub.id)}">Supprimer</button>
+                                            </div>
+                                        </div>
+                                        ${renderAttachmentsHTML(sub.id)}
+                                    </div>
+                                `;
+                            }).join("")}
+                        </div>
+                    ` : ""}
+                </article>
+            `;
+        }).join("");
+    }
+
+    function renderAll() {
+        renderDossierSelect();
+        renderTasks();
+    }
+
+    /* =========================================================================
+       6. GESTION DES ÉVÉNEMENTS (DOSSIERS, TÂCHES, SOUS-TÂCHES, PIÈCES JOINTES)
+       ========================================================================= */
+
+    // Sélection et recherche de dossier
+    document.getElementById("dossier-select").addEventListener("change", (e) => {
+        state.selectedDossierId = e.target.value;
+        saveStateToLocalStorage();
+        renderAll();
+    });
+
+    document.getElementById("dossier-search").addEventListener("input", (e) => {
+        state.dossierSearch = e.target.value;
+        renderAll();
+    });
+
+    // Ouvrir modale Nouveau dossier
+    document.getElementById("btn-add-dossier").addEventListener("click", () => {
+        document.getElementById("modal-dossier-title").textContent = "Nouveau dossier";
+        document.getElementById("dossier-id").value = "";
+        document.getElementById("dossier-number").value = "";
+        document.getElementById("dossier-name").value = "";
+        openModal("modal-dossier");
+        document.getElementById("dossier-number").focus();
+    });
+
+    // Ouvrir modale Modifier dossier
+    document.getElementById("btn-edit-dossier").addEventListener("click", () => {
+        const current = state.dossiers.find(d => d.id === state.selectedDossierId);
+        if (!current) return;
+        document.getElementById("modal-dossier-title").textContent = "Modifier le dossier";
+        document.getElementById("dossier-id").value = current.id;
+        document.getElementById("dossier-number").value = current.number;
+        document.getElementById("dossier-name").value = current.name;
+        openModal("modal-dossier");
+        document.getElementById("dossier-name").focus();
+    });
+
+    // Enregistrer dossier
+    document.getElementById("form-dossier").addEventListener("submit", (e) => {
+        e.preventDefault();
+        const id = document.getElementById("dossier-id").value;
+        const number = document.getElementById("dossier-number").value.trim();
+        const name = document.getElementById("dossier-name").value.trim();
+        if (!number || !name) return;
+
+        if (id) {
+            const dossier = state.dossiers.find(d => d.id === id);
+            if (dossier) {
+                dossier.number = number;
+                dossier.name = name;
+            }
+            showToast("Dossier modifié.");
+        } else {
+            const newDossier = { id: generateId(), number, name };
+            state.dossiers.push(newDossier);
+            state.selectedDossierId = newDossier.id;
+            state.dossierSearch = "";
+            document.getElementById("dossier-search").value = "";
+            showToast("Dossier créé.");
+        }
+
+        saveStateToLocalStorage();
+        closeModal("modal-dossier");
+        renderAll();
+    });
+
+    // Supprimer dossier
+    document.getElementById("btn-delete-dossier").addEventListener("click", async () => {
+        const current = state.dossiers.find(d => d.id === state.selectedDossierId);
+        if (!current) return;
+
+        const ok = await askConfirm(`Supprimer le dossier « ${current.number} — ${current.name} » ainsi que toutes ses tâches et pièces jointes ?`);
+        if (!ok) return;
+
+        const taskIdsToRemove = state.tasks.filter(t => t.dossierId === current.id).map(t => t.id);
+        const attsToRemove = state.attachmentsMeta.filter(a => taskIdsToRemove.includes(a.targetId));
+
+        for (const att of attsToRemove) {
+            await idbDeleteAttachment(att.id);
+        }
+
+        state.attachmentsMeta = state.attachmentsMeta.filter(a => !taskIdsToRemove.includes(a.targetId));
+        state.tasks = state.tasks.filter(t => t.dossierId !== current.id);
+        state.dossiers = state.dossiers.filter(d => d.id !== current.id);
+        state.selectedDossierId = state.dossiers.length > 0 ? state.dossiers[0].id : "";
+
+        saveStateToLocalStorage();
+        renderAll();
+        showToast("Dossier supprimé.");
+    });
+
+    // Filtres & Tris
+    document.getElementById("filter-status").addEventListener("change", (e) => {
+        state.filterStatus = e.target.value;
+        renderTasks();
+    });
+
+    document.getElementById("filter-priority").addEventListener("change", (e) => {
+        state.filterPriority = e.target.value;
+        renderTasks();
+    });
+
+    document.getElementById("filter-overdue").addEventListener("change", (e) => {
+        state.filterOverdueOnly = e.target.checked;
+        renderTasks();
+    });
+
+    document.getElementById("sort-tasks").addEventListener("change", (e) => {
+        state.sortBy = e.target.value;
+        renderTasks();
+    });
+
+    // Ouvrir modale Nouvelle tâche ou Nouvelle sous-tâche
+    function openTaskFormModal(taskToEdit = null, parentId = "") {
+        if (!state.selectedDossierId) return;
+
+        document.getElementById("task-id").value = taskToEdit ? taskToEdit.id : "";
+        document.getElementById("task-parent-id").value = taskToEdit ? (taskToEdit.parentId || "") : (parentId || "");
+
+        const isSub = Boolean(taskToEdit ? taskToEdit.parentId : parentId);
+        document.getElementById("modal-task-title").textContent = taskToEdit
+            ? (isSub ? "Modifier la sous-tâche" : "Modifier la tâche")
+            : (isSub ? "Nouvelle sous-tâche" : "Nouvelle tâche");
+
+        document.getElementById("task-title").value = taskToEdit ? taskToEdit.title : "";
+        document.getElementById("task-status").value = taskToEdit ? taskToEdit.status : "À faire";
+        document.getElementById("task-priority").value = taskToEdit ? taskToEdit.priority : "Normal";
+        document.getElementById("task-due-date").value = taskToEdit ? (taskToEdit.dueDate || "") : "";
+        document.getElementById("task-description").value = taskToEdit ? (taskToEdit.description || "") : "";
+
+        openModal("modal-task");
+        document.getElementById("task-title").focus();
+    }
+
+    document.getElementById("btn-new-task").addEventListener("click", () => openTaskFormModal(null, ""));
+
+    // Enregistrer tâche ou sous-tâche
+    document.getElementById("form-task").addEventListener("submit", (e) => {
+        e.preventDefault();
+        if (!state.selectedDossierId) return;
+
+        const id = document.getElementById("task-id").value;
+        const parentId = document.getElementById("task-parent-id").value || null;
+        const title = document.getElementById("task-title").value.trim();
+        const status = document.getElementById("task-status").value;
+        const priority = document.getElementById("task-priority").value;
+        const dueDate = document.getElementById("task-due-date").value || "";
+        const description = document.getElementById("task-description").value.trim();
+
+        if (!title) return;
+
+        if (id) {
+            const existing = state.tasks.find(t => t.id === id);
+            if (existing) {
+                existing.title = title;
+                existing.status = status;
+                existing.priority = priority;
+                existing.dueDate = dueDate;
+                existing.description = description;
+            }
+            showToast(parentId ? "Sous-tâche modifiée." : "Tâche modifiée.");
+        } else {
+            state.tasks.push({
+                id: generateId(),
+                dossierId: state.selectedDossierId,
+                parentId,
+                title,
+                status,
+                priority,
+                dueDate,
+                description,
+                createdAt: new Date().toISOString()
+            });
+            if (parentId) state.collapsedTasks.delete(parentId);
+            showToast(parentId ? "Sous-tâche ajoutée." : "Tâche créée.");
+        }
+
+        saveStateToLocalStorage();
+        closeModal("modal-task");
+        renderTasks();
+    });
+
+    // Délégation d'événements sur la liste des tâches (statut, sous-tâches, pièces jointes, modifier, supprimer)
+    const tasksContainer = document.getElementById("tasks-container");
+
+    tasksContainer.addEventListener("change", (e) => {
+        const statusSelect = e.target.closest("[data-quick-status]");
+        if (statusSelect) {
+            const taskId = statusSelect.getAttribute("data-quick-status");
+            const item = state.tasks.find(t => t.id === taskId);
+            if (item) {
+                item.status = statusSelect.value;
+                saveStateToLocalStorage();
+                renderTasks();
+            }
+        }
+    });
+
+    tasksContainer.addEventListener("click", async (e) => {
+        // Déplier / Réduire sous-tâches
+        const collapseBtn = e.target.closest("[data-toggle-collapse]");
+        if (collapseBtn) {
+            const id = collapseBtn.getAttribute("data-toggle-collapse");
+            if (state.collapsedTasks.has(id)) state.collapsedTasks.delete(id);
+            else state.collapsedTasks.add(id);
+            renderTasks();
+            return;
+        }
+
+        // Ajouter une sous-tâche
+        const addSubBtn = e.target.closest("[data-add-subtask]");
+        if (addSubBtn) {
+            openTaskFormModal(null, addSubBtn.getAttribute("data-add-subtask"));
+            return;
+        }
+
+        // Ajouter une pièce jointe directement (sans ouvrir la fiche de la tâche)
+        const uploadBtn = e.target.closest("[data-upload-target]");
+        if (uploadBtn) {
+            state.pendingUploadTargetId = uploadBtn.getAttribute("data-upload-target");
+            const fileInput = document.getElementById("direct-file-input");
+            fileInput.value = "";
+            fileInput.click();
+            return;
+        }
+
+        // Afficher / Masquer la liste des pièces jointes
+        const toggleAttBtn = e.target.closest("[data-toggle-att]");
+        if (toggleAttBtn) {
+            const targetId = toggleAttBtn.getAttribute("data-toggle-att");
+            if (state.openAttachments.has(targetId)) state.openAttachments.delete(targetId);
+            else state.openAttachments.add(targetId);
+            renderTasks();
+            return;
+        }
+
+        // Télécharger une pièce jointe depuis IndexedDB
+        const downloadAttBtn = e.target.closest("[data-download-att]");
+        if (downloadAttBtn) {
+            const attId = downloadAttBtn.getAttribute("data-download-att");
+            const record = await idbGetAttachmentBlob(attId);
+            if (!record || !record.blob) {
+                showToast("Fichier introuvable.");
+                return;
+            }
+            const url = URL.createObjectURL(record.blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = record.name;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            setTimeout(() => URL.revokeObjectURL(url), 1000);
+            return;
+        }
+
+        // Supprimer une pièce jointe
+        const deleteAttBtn = e.target.closest("[data-delete-att]");
+        if (deleteAttBtn) {
+            const attId = deleteAttBtn.getAttribute("data-delete-att");
+            const att = state.attachmentsMeta.find(a => a.id === attId);
+            if (!att) return;
+            const ok = await askConfirm(`Supprimer la pièce jointe « ${att.name} » ?`);
+            if (!ok) return;
+
+            await idbDeleteAttachment(attId);
+            state.attachmentsMeta = state.attachmentsMeta.filter(a => a.id !== attId);
+            renderTasks();
+            showToast("Pièce jointe supprimée.");
+            return;
+        }
+
+        // Modifier tâche ou sous-tâche
+        const editBtn = e.target.closest("[data-edit-task]");
+        if (editBtn) {
+            const item = state.tasks.find(t => t.id === editBtn.getAttribute("data-edit-task"));
+            if (item) openTaskFormModal(item, item.parentId || "");
+            return;
+        }
+
+        // Supprimer tâche ou sous-tâche
+        const deleteBtn = e.target.closest("[data-delete-task]");
+        if (deleteBtn) {
+            const id = deleteBtn.getAttribute("data-delete-task");
+            const item = state.tasks.find(t => t.id === id);
+            if (!item) return;
+
+            const children = state.tasks.filter(t => t.parentId === id);
+            const msg = children.length > 0
+                ? `Supprimer « ${item.title} » ainsi que ses ${children.length} sous-tâche(s) et pièces jointes ?`
+                : `Supprimer « ${item.title} » et ses pièces jointes ?`;
+
+            const ok = await askConfirm(msg);
+            if (!ok) return;
+
+            const idsToDelete = [id, ...children.map(c => c.id)];
+            const attsToDelete = state.attachmentsMeta.filter(a => idsToDelete.includes(a.targetId));
+
+            for (const att of attsToDelete) {
+                await idbDeleteAttachment(att.id);
+            }
+
+            state.attachmentsMeta = state.attachmentsMeta.filter(a => !idsToDelete.includes(a.targetId));
+            state.tasks = state.tasks.filter(t => !idsToDelete.includes(t.id));
+
+            saveStateToLocalStorage();
+            renderTasks();
+            showToast(item.parentId ? "Sous-tâche supprimée." : "Tâche supprimée.");
+        }
+    });
+
+    // Réception immédiate des fichiers sélectionnés depuis l'ordinateur
+    document.getElementById("direct-file-input").addEventListener("change", async (e) => {
+        const targetId = state.pendingUploadTargetId;
+        const files = Array.from(e.target.files || []);
+        if (!targetId || files.length === 0) return;
+
+        for (const file of files) {
+            const record = {
+                id: generateId(),
+                targetId,
+                name: file.name,
+                type: file.type || "application/octet-stream",
+                size: file.size,
+                addedAt: new Date().toISOString(),
+                blob: file
+            };
+            await idbSaveAttachment(record);
+            state.attachmentsMeta.push({
+                id: record.id,
+                targetId: record.targetId,
+                name: record.name,
+                type: record.type,
+                size: record.size,
+                addedAt: record.addedAt
+            });
+        }
+
+        state.openAttachments.add(targetId);
+        state.pendingUploadTargetId = null;
+        e.target.value = "";
+        renderTasks();
+        showToast(files.length > 1 ? `${files.length} pièces jointes ajoutées.` : "Pièce jointe ajoutée.");
+    });
+
+    /* =========================================================================
+       7. INITIALISATION AU CHARGEMENT
+       ========================================================================= */
+    async function init() {
+        loadStateFromLocalStorage();
+        try {
+            state.attachmentsMeta = await idbGetAllAttachmentsMeta();
+        } catch (err) {
+            console.error("Erreur IndexedDB :", err);
+        }
+        renderAll();
+    }
+
+    init();
+})();
+</script>
+</body>
+</html>
