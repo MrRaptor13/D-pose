@@ -5,6 +5,11 @@
 D-pose est un gestionnaire de tâches par dossier client avec dépôt de documents. Il tient dans **un seul fichier HTML** (`d-pose.html`), sans serveur ni bibliothèque externe, et s’intègre dans un site Google Sites.
 
 ---
+## Test de fonctionalités
+Le test utilise des entreprise et taches fictives.
+https://sites.google.com/view/d-pose/accueil
+
+---
 
 ## Fonctionnalités
 
